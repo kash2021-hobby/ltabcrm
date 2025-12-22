@@ -36,7 +36,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Search, Edit, Trash2, Eye, Phone, Bike, UserPlus } from "lucide-react";
+import { Search, Edit, Trash2, Eye, Phone, Bike, UserPlus, ChevronRight, ArrowLeft } from "lucide-react";
 import { LeadForm } from "./LeadForm";
 import { format } from "date-fns";
 
@@ -74,6 +74,8 @@ export function LeadsTable({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedLeads, setSelectedLeads] = useState<Set<number>>(new Set());
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+  const [viewingLead, setViewingLead] = useState<Lead | null>(null);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
 
   const filteredLeads = leads.filter((lead) => {
     const matchesSearch =
@@ -330,44 +332,160 @@ export function LeadsTable({
     );
   };
 
-  // Mobile Card View - Optimized with selection
+  // Mobile Lead Details Drawer Content
+  const MobileLeadDetails = ({ lead }: { lead: Lead }) => (
+    <div className="flex flex-col h-full">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-3 p-4 border-b">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setViewingLead(null)}
+          className="h-9 w-9"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h2 className="font-semibold text-lg">Lead Details</h2>
+      </div>
+      
+      {/* Lead Info */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Name</p>
+          <p className="font-medium">{lead.full_name || "-"}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Phone</p>
+          <p className="font-medium">{lead.phone_number || "-"}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Bike Model</p>
+          <p className="font-medium">{lead.bike_model || "-"}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Post Code</p>
+          <p className="font-medium">{lead.post_code || "-"}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Purchase Timeline</p>
+          <p className="font-medium">{lead.purchase_timeline || "-"}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Status</p>
+          <Badge className={`${statusColors[lead.status || "new"]} mt-1`}>
+            {lead.status || "new"}
+          </Badge>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Notes</p>
+          <p className="font-medium">{lead.notes || "No notes"}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Created</p>
+          <p className="font-medium">
+            {lead.created_at ? format(new Date(lead.created_at), "MMM dd, yyyy") : "-"}
+          </p>
+        </div>
+      </div>
+      
+      {/* Actions */}
+      <div className="p-4 border-t flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={() => {
+            setViewingLead(null);
+            setEditingLead(lead);
+          }}
+        >
+          <Edit className="h-4 w-4 mr-2" />
+          Edit
+        </Button>
+        {isAdmin && (
+          <Button
+            variant="destructive"
+            className="flex-1"
+            onClick={() => {
+              onDelete(lead.id);
+              setViewingLead(null);
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  // Mobile Card View - Simplified with chevron
   const MobileCardView = () => (
-    <div className="space-y-2">
-      {filteredLeads.length === 0 ? (
-        <Card>
-          <CardContent className="flex items-center justify-center py-12 text-muted-foreground">
-            No leads found
-          </CardContent>
-        </Card>
-      ) : (
-        filteredLeads.map((lead) => (
-          <Card key={lead.id} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="flex items-stretch">
-                {/* Checkbox for selection */}
-                {isAdmin && onBulkAssign && (
-                  <div className="flex items-center px-3 border-r">
-                    <Checkbox
-                      checked={selectedLeads.has(lead.id)}
-                      onCheckedChange={(checked) => handleSelectLead(lead.id, !!checked)}
-                    />
-                  </div>
-                )}
-                
-                {/* Status indicator bar */}
-                <div className={`w-1.5 ${
-                  lead.status === 'converted' ? 'bg-green-500' :
-                  lead.status === 'contacted' ? 'bg-yellow-500' :
-                  lead.status === 'qualified' ? 'bg-purple-500' :
-                  lead.status === 'lost' ? 'bg-red-500' :
-                  'bg-blue-500'
-                }`} />
-                
-                <div className="flex-1 p-3">
-                  <div className="flex items-start justify-between gap-2">
+    <>
+      {/* Lead Details Drawer */}
+      <Drawer open={!!viewingLead} onOpenChange={(open) => !open && setViewingLead(null)}>
+        <DrawerContent className="h-[85vh]">
+          {viewingLead && <MobileLeadDetails lead={viewingLead} />}
+        </DrawerContent>
+      </Drawer>
+      
+      {/* Edit Lead Drawer */}
+      <Drawer open={!!editingLead} onOpenChange={(open) => !open && setEditingLead(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Edit Lead</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4">
+            {editingLead && (
+              <LeadForm
+                lead={editingLead}
+                onSubmit={(updates) => {
+                  onUpdate(editingLead.id, updates);
+                  setEditingLead(null);
+                }}
+              />
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <div className="space-y-2">
+        {filteredLeads.length === 0 ? (
+          <Card>
+            <CardContent className="flex items-center justify-center py-12 text-muted-foreground">
+              No leads found
+            </CardContent>
+          </Card>
+        ) : (
+          filteredLeads.map((lead) => (
+            <Card key={lead.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="flex items-stretch">
+                  {/* Checkbox for selection */}
+                  {isAdmin && onBulkAssign && (
+                    <div className="flex items-center px-3 border-r">
+                      <Checkbox
+                        checked={selectedLeads.has(lead.id)}
+                        onCheckedChange={(checked) => handleSelectLead(lead.id, !!checked)}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Status indicator bar */}
+                  <div className={`w-1.5 ${
+                    lead.status === 'converted' ? 'bg-green-500' :
+                    lead.status === 'contacted' ? 'bg-yellow-500' :
+                    lead.status === 'qualified' ? 'bg-purple-500' :
+                    lead.status === 'lost' ? 'bg-red-500' :
+                    'bg-blue-500'
+                  }`} />
+                  
+                  {/* Card Content - Clickable for details */}
+                  <button
+                    className="flex-1 p-3 flex items-center justify-between gap-2 text-left hover:bg-muted/50 transition-colors"
+                    onClick={() => setViewingLead(lead)}
+                  >
                     <div className="flex-1 min-w-0">
-                      {/* Name and Status Row */}
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-foreground truncate text-sm">
                           {lead.full_name || "Unknown"}
                         </h3>
@@ -375,30 +493,18 @@ export function LeadsTable({
                           {lead.status || "new"}
                         </Badge>
                       </div>
-                      
-                      {/* Info Row - Compact */}
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {lead.phone_number || "-"}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Bike className="h-3 w-3" />
-                          {lead.bike_model || "-"}
-                        </span>
-                      </div>
                     </div>
                     
-                    {/* Actions - Compact */}
-                    <LeadActions lead={lead} />
-                  </div>
+                    {/* Chevron */}
+                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  </button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))
-      )}
-    </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </>
   );
 
   // Desktop Table View with selection
