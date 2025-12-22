@@ -4,7 +4,8 @@ import {
   FileText, 
   Settings, 
   UserCircle,
-  LogOut 
+  LogOut,
+  BarChart3 
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +32,7 @@ export function DashboardSidebar() {
   const adminNavItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "All Leads", url: "/dashboard/leads", icon: FileText },
+    { title: "Team Performance", url: "/dashboard/performance", icon: BarChart3 },
     { title: "Users", url: "/dashboard/users", icon: Users },
     { title: "Settings", url: "/dashboard/settings", icon: Settings },
   ];
