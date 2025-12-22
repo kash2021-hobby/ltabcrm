@@ -1,6 +1,7 @@
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useLeads } from "@/hooks/useLeads";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, TrendingUp, Users, CheckCircle } from "lucide-react";
 import {
@@ -14,11 +15,13 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts";
 
 export default function Dashboard() {
   const { role } = useAuth();
   const { leads } = useLeads();
+  const isMobile = useIsMobile();
 
   const totalLeads = leads.length;
   const newLeads = leads.filter((l) => l.status === "new").length;
@@ -42,7 +45,7 @@ export default function Dashboard() {
   }, {} as Record<string, number>);
 
   const bikeData = Object.entries(bikeModelCounts)
-    .map(([name, value]) => ({ name, value }))
+    .map(([name, value]) => ({ name: isMobile ? name.split(" ")[0] : name, value }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 
@@ -73,18 +76,23 @@ export default function Dashboard() {
     },
   ];
 
+  // Chart dimensions based on mobile
+  const chartHeight = isMobile ? 220 : 300;
+  const pieInnerRadius = isMobile ? 40 : 60;
+  const pieOuterRadius = isMobile ? 70 : 100;
+
   return (
     <DashboardLayout title="Dashboard">
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">{stat.title}</CardTitle>
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
               <p className="text-xs text-muted-foreground">{stat.description}</p>
             </CardContent>
           </Card>
@@ -92,35 +100,36 @@ export default function Dashboard() {
       </div>
 
       {/* Charts */}
-      <div className="mt-6 grid gap-6 md:grid-cols-2">
+      <div className="mt-4 sm:mt-6 grid gap-4 sm:gap-6 md:grid-cols-2">
         {/* Status Distribution */}
         <Card>
-          <CardHeader>
-            <CardTitle>Lead Status Distribution</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base sm:text-lg">Lead Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             {statusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <PieChart>
                   <Pie
                     data={statusData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={pieInnerRadius}
+                    outerRadius={pieOuterRadius}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
+                    label={isMobile ? undefined : ({ name, value }) => `${name}: ${value}`}
                   >
                     {statusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip />
+                  {isMobile && <Legend />}
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+              <div className="flex items-center justify-center text-muted-foreground" style={{ height: chartHeight }}>
                 No data available
               </div>
             )}
@@ -129,22 +138,31 @@ export default function Dashboard() {
 
         {/* Top Bike Models */}
         <Card>
-          <CardHeader>
-            <CardTitle>Top Bike Models</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base sm:text-lg">Top Bike Models</CardTitle>
           </CardHeader>
           <CardContent>
             {bikeData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={bikeData}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
+                <BarChart data={bikeData} layout={isMobile ? "vertical" : "horizontal"}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis />
+                  {isMobile ? (
+                    <>
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={70} />
+                    </>
+                  ) : (
+                    <>
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                      <YAxis />
+                    </>
+                  )}
                   <Tooltip />
                   <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+              <div className="flex items-center justify-center text-muted-foreground" style={{ height: chartHeight }}>
                 No data available
               </div>
             )}
