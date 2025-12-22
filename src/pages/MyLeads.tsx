@@ -7,7 +7,7 @@ export default function MyLeads() {
 
   return (
     <DashboardLayout title="My Leads">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-6">
         <p className="text-muted-foreground">
           View and manage your assigned leads
         </p>

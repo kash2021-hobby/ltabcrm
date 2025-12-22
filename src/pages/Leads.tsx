@@ -96,7 +96,7 @@ export default function Leads() {
 
   return (
     <DashboardLayout title="All Leads">
-      <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
+      <div className="space-y-3 sm:space-y-6 pb-20 sm:pb-0">
         {/* Header - Desktop only description */}
         <div className="flex items-center justify-between">
           <p className="hidden md:block text-muted-foreground">

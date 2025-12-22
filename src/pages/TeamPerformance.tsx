@@ -228,7 +228,7 @@ export default function TeamPerformance() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base sm:text-lg">Per-Salesman Performance</CardTitle>
         </CardHeader>
-        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+        <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6 pt-0">
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (

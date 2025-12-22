@@ -203,7 +203,7 @@ export default function Users() {
 
   return (
     <DashboardLayout title="User Management">
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-muted-foreground text-sm">
             Manage user accounts and their roles
