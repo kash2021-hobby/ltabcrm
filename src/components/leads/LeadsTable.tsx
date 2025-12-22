@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Lead } from "@/hooks/useLeads";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -76,6 +76,42 @@ export function LeadsTable({
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Long-press handlers for mobile bulk selection
+  const handleTouchStart = useCallback((leadId: number) => {
+    if (!isAdmin || !onBulkAssign) return;
+    
+    longPressTimerRef.current = setTimeout(() => {
+      // Trigger haptic feedback if available
+      if (navigator.vibrate) navigator.vibrate(50);
+      
+      // Enable selection mode and select this lead
+      setSelectionMode(true);
+      handleSelectLead(leadId, true);
+    }, 500);
+  }, [isAdmin, onBulkAssign]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(() => {
+    // Cancel long-press if user moves finger
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const exitSelectionMode = useCallback(() => {
+    setSelectionMode(false);
+    setSelectedLeads(new Set());
+  }, []);
 
   const filteredLeads = leads.filter((lead) => {
     const matchesSearch =
@@ -390,6 +426,18 @@ export function LeadsTable({
       
       {/* Actions */}
       <div className="p-4 border-t flex gap-2">
+        {lead.phone_number && (
+          <Button
+            variant="outline"
+            className="flex-1"
+            asChild
+          >
+            <a href={`tel:${lead.phone_number}`}>
+              <Phone className="h-4 w-4 mr-2" />
+              Call
+            </a>
+          </Button>
+        )}
         <Button
           variant="outline"
           className="flex-1"
@@ -457,11 +505,18 @@ export function LeadsTable({
           </Card>
         ) : (
           filteredLeads.map((lead) => (
-            <Card key={lead.id} className="overflow-hidden">
+            <Card 
+              key={lead.id} 
+              className={`overflow-hidden ${selectionMode && selectedLeads.has(lead.id) ? 'ring-2 ring-primary' : ''}`}
+              onTouchStart={() => handleTouchStart(lead.id)}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+              onTouchMove={handleTouchMove}
+            >
               <CardContent className="p-0">
                 <div className="flex items-stretch">
-                  {/* Checkbox for selection */}
-                  {isAdmin && onBulkAssign && (
+                  {/* Checkbox for selection - show when in selection mode */}
+                  {isAdmin && onBulkAssign && selectionMode && (
                     <div className="flex items-center px-3 border-r">
                       <Checkbox
                         checked={selectedLeads.has(lead.id)}
@@ -479,10 +534,16 @@ export function LeadsTable({
                     'bg-blue-500'
                   }`} />
                   
-                  {/* Card Content - Clickable for details */}
+                  {/* Card Content - Clickable for details or selection */}
                   <button
                     className="flex-1 p-3 flex items-center justify-between gap-2 text-left hover:bg-muted/50 transition-colors"
-                    onClick={() => setViewingLead(lead)}
+                    onClick={() => {
+                      if (selectionMode) {
+                        handleSelectLead(lead.id, !selectedLeads.has(lead.id));
+                      } else {
+                        setViewingLead(lead);
+                      }
+                    }}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -495,8 +556,10 @@ export function LeadsTable({
                       </div>
                     </div>
                     
-                    {/* Chevron */}
-                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    {/* Chevron - hide in selection mode */}
+                    {!selectionMode && (
+                      <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    )}
                   </button>
                 </div>
               </CardContent>
@@ -581,8 +644,8 @@ export function LeadsTable({
           {/* Filters and Bulk Actions */}
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
-              {/* Select All for mobile */}
-              {isMobile && isAdmin && onBulkAssign && (
+              {/* Select All for mobile - only show in selection mode */}
+              {isMobile && isAdmin && onBulkAssign && selectionMode && (
                 <div className="flex items-center">
                   <Checkbox
                     checked={isAllSelected}
@@ -617,7 +680,7 @@ export function LeadsTable({
             </div>
             
             {/* Selection Action Bar */}
-            {selectedLeads.size > 0 && isAdmin && onBulkAssign && (
+            {(selectedLeads.size > 0 || selectionMode) && isAdmin && onBulkAssign && (
               <div className="flex items-center justify-between p-2 bg-primary/10 rounded-lg">
                 <span className="text-sm font-medium">
                   {selectedLeads.size} selected
@@ -626,7 +689,7 @@ export function LeadsTable({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSelectedLeads(new Set())}
+                    onClick={exitSelectionMode}
                   >
                     Clear
                   </Button>
