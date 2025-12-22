@@ -43,37 +43,46 @@ export type Database = {
       }
       tvs_leads: {
         Row: {
+          assigned_to: string | null
           bike_model: string | null
           created_at: string | null
           full_name: string | null
           id: number
           lead_time: string | null
+          notes: string | null
           phone_number: string | null
           post_code: string | null
           purchase_timeline: string | null
           source: string | null
+          status: string | null
         }
         Insert: {
+          assigned_to?: string | null
           bike_model?: string | null
           created_at?: string | null
           full_name?: string | null
           id?: never
           lead_time?: string | null
+          notes?: string | null
           phone_number?: string | null
           post_code?: string | null
           purchase_timeline?: string | null
           source?: string | null
+          status?: string | null
         }
         Update: {
+          assigned_to?: string | null
           bike_model?: string | null
           created_at?: string | null
           full_name?: string | null
           id?: never
           lead_time?: string | null
+          notes?: string | null
           phone_number?: string | null
           post_code?: string | null
           purchase_timeline?: string | null
           source?: string | null
+          status?: string | null
         }
         Relationships: []
       }
