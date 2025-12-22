@@ -42,10 +42,11 @@ export function useLeads() {
   });
 
   const updateLead = useMutation({
-    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Lead> }) => {
+    mutationFn: async ({ id, updates }: { id: number; updates: Omit<Partial<Lead>, "id"> }) => {
+      const { id: _, ...safeUpdates } = updates as Partial<Lead>;
       const { error } = await supabase
         .from("tvs_leads")
-        .update(updates)
+        .update(safeUpdates)
         .eq("id", id);
 
       if (error) throw error;
@@ -86,7 +87,7 @@ export function useLeads() {
   });
 
   const createLead = useMutation({
-    mutationFn: async (newLead: Partial<Lead>) => {
+    mutationFn: async (newLead: Omit<Partial<Lead>, "id" | "created_at">) => {
       const { error } = await supabase
         .from("tvs_leads")
         .insert([newLead]);
