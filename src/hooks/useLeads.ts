@@ -107,6 +107,28 @@ export function useLeads() {
     },
   });
 
+  const bulkAssignLeads = useMutation({
+    mutationFn: async ({ leadIds, salesmanId }: { leadIds: number[]; salesmanId: string }) => {
+      const { error } = await supabase
+        .from("tvs_leads")
+        .update({ assigned_to: salesmanId })
+        .in("id", leadIds);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { leadIds }) => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      toast({ title: `${leadIds.length} leads assigned successfully` });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error assigning leads",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     leads,
     isLoading,
@@ -114,5 +136,6 @@ export function useLeads() {
     updateLead,
     deleteLead,
     createLead,
+    bulkAssignLeads,
   };
 }
