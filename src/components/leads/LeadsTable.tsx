@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -35,7 +36,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Search, Edit, Trash2, Eye, Phone, Bike, Calendar } from "lucide-react";
+import { Search, Edit, Trash2, Eye, Phone, Bike, UserPlus } from "lucide-react";
 import { LeadForm } from "./LeadForm";
 import { format } from "date-fns";
 
@@ -43,7 +44,10 @@ interface LeadsTableProps {
   leads: Lead[];
   onUpdate: (id: number, updates: Partial<Lead>) => void;
   onDelete: (id: number) => void;
+  onBulkAssign?: (leadIds: number[], salesmanId: string) => void;
+  salesmen?: { id: string; email: string; full_name: string | null; role: string }[];
   isLoading?: boolean;
+  isBulkAssigning?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -54,12 +58,22 @@ const statusColors: Record<string, string> = {
   lost: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
 };
 
-export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableProps) {
+export function LeadsTable({ 
+  leads, 
+  onUpdate, 
+  onDelete, 
+  onBulkAssign,
+  salesmen = [],
+  isLoading,
+  isBulkAssigning,
+}: LeadsTableProps) {
   const { role } = useAuth();
   const isMobile = useIsMobile();
   const isAdmin = role === "admin";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedLeads, setSelectedLeads] = useState<Set<number>>(new Set());
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
 
   const filteredLeads = leads.filter((lead) => {
     const matchesSearch =
@@ -69,6 +83,35 @@ export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableP
     const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleSelectLead = (leadId: number, checked: boolean) => {
+    const newSelected = new Set(selectedLeads);
+    if (checked) {
+      newSelected.add(leadId);
+    } else {
+      newSelected.delete(leadId);
+    }
+    setSelectedLeads(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedLeads(new Set(filteredLeads.map((lead) => lead.id)));
+    } else {
+      setSelectedLeads(new Set());
+    }
+  };
+
+  const handleBulkAssign = (salesmanId: string) => {
+    if (onBulkAssign && selectedLeads.size > 0) {
+      onBulkAssign(Array.from(selectedLeads), salesmanId);
+      setSelectedLeads(new Set());
+      setBulkAssignOpen(false);
+    }
+  };
+
+  const isAllSelected = filteredLeads.length > 0 && filteredLeads.every((lead) => selectedLeads.has(lead.id));
+  const isSomeSelected = filteredLeads.some((lead) => selectedLeads.has(lead.id));
 
   if (isLoading) {
     return (
@@ -217,7 +260,77 @@ export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableP
     );
   };
 
-  // Mobile Card View - Optimized
+  // Bulk Assign Dialog Content
+  const BulkAssignContent = () => {
+    const [selectedSalesman, setSelectedSalesman] = useState<string>("");
+    
+    return (
+      <div className="space-y-4 p-4 md:p-0">
+        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+          <UserPlus className="h-5 w-5 text-primary" />
+          <span className="text-sm font-medium">
+            {selectedLeads.size} lead{selectedLeads.size !== 1 ? "s" : ""} selected
+          </span>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Select Salesman</label>
+          <Input
+            placeholder="Search salesman..."
+            className="mb-2"
+            onChange={(e) => {
+              const searchValue = e.target.value.toLowerCase();
+              // Filter is handled in display
+            }}
+          />
+          <div className="max-h-[200px] overflow-y-auto space-y-1 border rounded-lg p-2">
+            {salesmen.map((salesman) => (
+              <div
+                key={salesman.id}
+                onClick={() => setSelectedSalesman(salesman.id)}
+                className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                  selectedSalesman === salesman.id 
+                    ? "bg-primary/10 border border-primary" 
+                    : "hover:bg-muted"
+                }`}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <UserPlus className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate text-sm">
+                    {salesman.full_name || "No name"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {salesman.email}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setBulkAssignOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="flex-1"
+            disabled={!selectedSalesman || isBulkAssigning}
+            onClick={() => handleBulkAssign(selectedSalesman)}
+          >
+            {isBulkAssigning ? "Assigning..." : "Assign"}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Mobile Card View - Optimized with selection
   const MobileCardView = () => (
     <div className="space-y-2">
       {filteredLeads.length === 0 ? (
@@ -231,6 +344,16 @@ export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableP
           <Card key={lead.id} className="overflow-hidden">
             <CardContent className="p-0">
               <div className="flex items-stretch">
+                {/* Checkbox for selection */}
+                {isAdmin && onBulkAssign && (
+                  <div className="flex items-center px-3 border-r">
+                    <Checkbox
+                      checked={selectedLeads.has(lead.id)}
+                      onCheckedChange={(checked) => handleSelectLead(lead.id, !!checked)}
+                    />
+                  </div>
+                )}
+                
                 {/* Status indicator bar */}
                 <div className={`w-1.5 ${
                   lead.status === 'converted' ? 'bg-green-500' :
@@ -278,12 +401,21 @@ export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableP
     </div>
   );
 
-  // Desktop Table View
+  // Desktop Table View with selection
   const DesktopTableView = () => (
     <div className="rounded-md border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
+            {isAdmin && onBulkAssign && (
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={isAllSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all"
+                />
+              </TableHead>
+            )}
             <TableHead>Name</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Bike Model</TableHead>
@@ -296,13 +428,21 @@ export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableP
         <TableBody>
           {filteredLeads.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={isAdmin && onBulkAssign ? 8 : 7} className="text-center py-8 text-muted-foreground">
                 No leads found
               </TableCell>
             </TableRow>
           ) : (
             filteredLeads.map((lead) => (
-              <TableRow key={lead.id}>
+              <TableRow key={lead.id} className={selectedLeads.has(lead.id) ? "bg-muted/50" : ""}>
+                {isAdmin && onBulkAssign && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedLeads.has(lead.id)}
+                      onCheckedChange={(checked) => handleSelectLead(lead.id, !!checked)}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="font-medium">{lead.full_name || "-"}</TableCell>
                 <TableCell>{lead.phone_number || "-"}</TableCell>
                 <TableCell>{lead.bike_model || "-"}</TableCell>
@@ -332,30 +472,88 @@ export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableP
     <Card>
       <CardContent className="p-3 md:p-6">
         <div className="space-y-3 md:space-y-4">
-          {/* Filters - Compact on mobile */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-sm"
-              />
+          {/* Filters and Bulk Actions */}
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              {/* Select All for mobile */}
+              {isMobile && isAdmin && onBulkAssign && (
+                <div className="flex items-center">
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all"
+                  />
+                </div>
+              )}
+              
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[110px] md:w-[150px] h-9 text-sm">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="contacted">Contacted</SelectItem>
+                  <SelectItem value="qualified">Qualified</SelectItem>
+                  <SelectItem value="converted">Converted</SelectItem>
+                  <SelectItem value="lost">Lost</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[110px] md:w-[150px] h-9 text-sm">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="qualified">Qualified</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
-                <SelectItem value="lost">Lost</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            {/* Selection Action Bar */}
+            {selectedLeads.size > 0 && isAdmin && onBulkAssign && (
+              <div className="flex items-center justify-between p-2 bg-primary/10 rounded-lg">
+                <span className="text-sm font-medium">
+                  {selectedLeads.size} selected
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedLeads(new Set())}
+                  >
+                    Clear
+                  </Button>
+                  {isMobile ? (
+                    <Drawer open={bulkAssignOpen} onOpenChange={setBulkAssignOpen}>
+                      <Button size="sm" onClick={() => setBulkAssignOpen(true)}>
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        Assign
+                      </Button>
+                      <DrawerContent>
+                        <DrawerHeader>
+                          <DrawerTitle>Assign Leads</DrawerTitle>
+                        </DrawerHeader>
+                        <BulkAssignContent />
+                      </DrawerContent>
+                    </Drawer>
+                  ) : (
+                    <Dialog open={bulkAssignOpen} onOpenChange={setBulkAssignOpen}>
+                      <Button size="sm" onClick={() => setBulkAssignOpen(true)}>
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        Assign
+                      </Button>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Assign Leads</DialogTitle>
+                        </DialogHeader>
+                        <BulkAssignContent />
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Content - Mobile Cards or Desktop Table */}

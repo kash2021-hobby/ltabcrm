@@ -31,7 +31,7 @@ import { Plus, UserPlus, User } from "lucide-react";
 import { useState } from "react";
 
 export default function Leads() {
-  const { leads, isLoading, updateLead, deleteLead, createLead } = useLeads();
+  const { leads, isLoading, updateLead, deleteLead, createLead, bulkAssignLeads } = useLeads();
   const { users } = useUsers();
   const isMobile = useIsMobile();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -153,7 +153,12 @@ export default function Leads() {
           leads={leads}
           onUpdate={(id, updates) => updateLead.mutate({ id, updates })}
           onDelete={(id) => deleteLead.mutate(id)}
+          onBulkAssign={(leadIds, salesmanId) => 
+            bulkAssignLeads.mutate({ leadIds, salesmanId })
+          }
+          salesmen={salesmen}
           isLoading={isLoading}
+          isBulkAssigning={bulkAssignLeads.isPending}
         />
 
         {/* Mobile FAB - Add Lead Drawer */}
