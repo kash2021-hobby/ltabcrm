@@ -217,51 +217,59 @@ export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableP
     );
   };
 
-  // Mobile Card View
+  // Mobile Card View - Optimized
   const MobileCardView = () => (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {filteredLeads.length === 0 ? (
         <Card>
-          <CardContent className="flex items-center justify-center py-8 text-muted-foreground">
+          <CardContent className="flex items-center justify-center py-12 text-muted-foreground">
             No leads found
           </CardContent>
         </Card>
       ) : (
         filteredLeads.map((lead) => (
-          <Card key={lead.id}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground truncate">
-                      {lead.full_name || "Unknown"}
-                    </h3>
-                    <Badge className={statusColors[lead.status || "new"]}>
-                      {lead.status || "new"}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3.5 w-3.5" />
-                      <span>{lead.phone_number || "-"}</span>
+          <Card key={lead.id} className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="flex items-stretch">
+                {/* Status indicator bar */}
+                <div className={`w-1.5 ${
+                  lead.status === 'converted' ? 'bg-green-500' :
+                  lead.status === 'contacted' ? 'bg-yellow-500' :
+                  lead.status === 'qualified' ? 'bg-purple-500' :
+                  lead.status === 'lost' ? 'bg-red-500' :
+                  'bg-blue-500'
+                }`} />
+                
+                <div className="flex-1 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      {/* Name and Status Row */}
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-foreground truncate text-sm">
+                          {lead.full_name || "Unknown"}
+                        </h3>
+                        <Badge className={`${statusColors[lead.status || "new"]} text-xs px-1.5 py-0`}>
+                          {lead.status || "new"}
+                        </Badge>
+                      </div>
+                      
+                      {/* Info Row - Compact */}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {lead.phone_number || "-"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Bike className="h-3 w-3" />
+                          {lead.bike_model || "-"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Bike className="h-3.5 w-3.5" />
-                      <span>{lead.bike_model || "-"}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>
-                        {lead.created_at
-                          ? format(new Date(lead.created_at), "MMM dd, yyyy")
-                          : "-"}
-                      </span>
-                    </div>
+                    
+                    {/* Actions - Compact */}
+                    <LeadActions lead={lead} />
                   </div>
                 </div>
-                
-                <LeadActions lead={lead} />
               </div>
             </CardContent>
           </Card>
@@ -321,39 +329,44 @@ export function LeadsTable({ leads, onUpdate, onDelete, isLoading }: LeadsTableP
   );
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-full sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search leads..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+    <Card>
+      <CardContent className="p-3 md:p-6">
+        <div className="space-y-3 md:space-y-4">
+          {/* Filters - Compact on mobile */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-9 text-sm"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[110px] md:w-[150px] h-9 text-sm">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="contacted">Contacted</SelectItem>
+                <SelectItem value="qualified">Qualified</SelectItem>
+                <SelectItem value="converted">Converted</SelectItem>
+                <SelectItem value="lost">Lost</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Content - Mobile Cards or Desktop Table */}
+          {isMobile ? <MobileCardView /> : <DesktopTableView />}
+
+          {/* Footer */}
+          <p className="text-xs md:text-sm text-muted-foreground text-center md:text-left">
+            {filteredLeads.length} of {leads.length} leads
+          </p>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[150px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="contacted">Contacted</SelectItem>
-            <SelectItem value="qualified">Qualified</SelectItem>
-            <SelectItem value="converted">Converted</SelectItem>
-            <SelectItem value="lost">Lost</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Content - Mobile Cards or Desktop Table */}
-      {isMobile ? <MobileCardView /> : <DesktopTableView />}
-
-      <p className="text-sm text-muted-foreground">
-        Showing {filteredLeads.length} of {leads.length} leads
-      </p>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
