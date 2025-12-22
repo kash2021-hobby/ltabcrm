@@ -72,10 +72,51 @@ export function useUsers() {
     },
   });
 
+  const createUser = useMutation({
+    mutationFn: async (userData: {
+      email: string;
+      password: string;
+      full_name: string;
+      role: UserWithRole["role"];
+    }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error("You must be logged in to create users");
+      }
+
+      const response = await supabase.functions.invoke("create-user", {
+        body: userData,
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to create user");
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({ title: "User created successfully" });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error creating user",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     users,
     isLoading,
     error,
     updateUserRole,
+    createUser,
   };
 }

@@ -15,10 +15,8 @@ const authSchema = z.object({
 });
 
 export function AuthForm() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const navigate = useNavigate();
@@ -50,71 +48,33 @@ export function AuthForm() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast({
-              title: "Login Failed",
-              description: "Invalid email or password. Please try again.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Login Failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-          return;
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast({
+            title: "Login Failed",
+            description: "Invalid email or password. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: error.message,
+            variant: "destructive",
+          });
         }
-
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
-        });
-        navigate("/dashboard");
-      } else {
-        const redirectUrl = `${window.location.origin}/dashboard`;
-        
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              full_name: fullName,
-            },
-          },
-        });
-
-        if (error) {
-          if (error.message.includes("already registered")) {
-            toast({
-              title: "Sign Up Failed",
-              description: "This email is already registered. Please log in instead.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Sign Up Failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-          return;
-        }
-
-        toast({
-          title: "Account Created!",
-          description: "Please check your email to confirm your account, or you may be logged in automatically.",
-        });
-        navigate("/dashboard");
+        return;
       }
+
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
+      navigate("/dashboard");
     } catch (error) {
       toast({
         title: "Error",
@@ -130,30 +90,14 @@ export function AuthForm() {
     <Card className="w-full max-w-md mx-auto shadow-lg">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center">
-          {isLogin ? "Welcome Back" : "Create Account"}
+          Welcome Back
         </CardTitle>
         <CardDescription className="text-center">
-          {isLogin
-            ? "Enter your credentials to access your dashboard"
-            : "Sign up to get started with the CRM"}
+          Enter your credentials to access your dashboard
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-          )}
-          
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -188,24 +132,13 @@ export function AuthForm() {
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLogin ? "Sign In" : "Create Account"}
+            Sign In
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setErrors({});
-            }}
-            className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
-          >
-            {isLogin
-              ? "Don't have an account? Sign up"
-              : "Already have an account? Sign in"}
-          </button>
-        </div>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Contact your administrator if you need an account
+        </p>
       </CardContent>
     </Card>
   );
