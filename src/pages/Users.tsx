@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
+import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 
 const roleColors: Record<string, string> = {
   admin: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
@@ -27,10 +28,19 @@ const roleColors: Record<string, string> = {
 };
 
 export default function Users() {
-  const { users, isLoading, updateUserRole } = useUsers();
+  const { users, isLoading, updateUserRole, createUser } = useUsers();
 
   const handleRoleChange = (userId: string, role: UserWithRole["role"]) => {
     updateUserRole.mutate({ userId, role });
+  };
+
+  const handleCreateUser = async (data: {
+    email: string;
+    password: string;
+    full_name: string;
+    role: UserWithRole["role"];
+  }) => {
+    await createUser.mutateAsync(data);
   };
 
   if (isLoading) {
@@ -46,9 +56,15 @@ export default function Users() {
   return (
     <DashboardLayout title="User Management">
       <div className="space-y-6">
-        <p className="text-muted-foreground">
-          Manage user accounts and their roles
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-muted-foreground">
+            Manage user accounts and their roles
+          </p>
+          <CreateUserDialog 
+            onCreateUser={handleCreateUser} 
+            isLoading={createUser.isPending} 
+          />
+        </div>
 
         <div className="rounded-md border bg-card">
           <Table>
