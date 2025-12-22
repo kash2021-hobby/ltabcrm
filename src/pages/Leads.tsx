@@ -62,7 +62,7 @@ export default function Leads() {
 
   // Quick Assign Card Component
   const QuickAssignCard = ({ lead }: { lead: typeof leads[0] }) => (
-    <Card className="min-w-[260px] flex-shrink-0 md:min-w-0 md:flex-shrink">
+    <Card>
       <CardContent className="p-4">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
@@ -134,16 +134,14 @@ export default function Leads() {
               </div>
             </CardHeader>
             <CardContent className="px-4 md:px-6 pb-4">
-              {/* Mobile: Horizontal scroll, Desktop: Grid */}
+              {/* Mobile: Vertical stack, Desktop: Grid */}
               <div className={
                 isMobile 
-                  ? "flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide"
+                  ? "space-y-3"
                   : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
               }>
-                {unassignedLeads.slice(0, isMobile ? 5 : 3).map((lead) => (
-                  <div key={lead.id} className={isMobile ? "snap-start" : ""}>
-                    <QuickAssignCard lead={lead} />
-                  </div>
+                {unassignedLeads.slice(0, 3).map((lead) => (
+                  <QuickAssignCard key={lead.id} lead={lead} />
                 ))}
               </div>
             </CardContent>
