@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Lead } from "@/hooks/useLeads";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -36,7 +36,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Search, Edit, Trash2, Eye, Phone, Bike, UserPlus, ChevronRight, ArrowLeft } from "lucide-react";
+import { Search, Edit, Trash2, Eye, Phone, UserPlus, ChevronRight, ArrowLeft, CheckSquare } from "lucide-react";
 import { LeadForm } from "./LeadForm";
 import { format } from "date-fns";
 
@@ -77,36 +77,6 @@ export function LeadsTable({
   const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Long-press handlers for mobile bulk selection
-  const handleTouchStart = useCallback((leadId: number) => {
-    if (!isAdmin || !onBulkAssign) return;
-    
-    longPressTimerRef.current = setTimeout(() => {
-      // Trigger haptic feedback if available
-      if (navigator.vibrate) navigator.vibrate(50);
-      
-      // Enable selection mode and select this lead
-      setSelectionMode(true);
-      handleSelectLead(leadId, true);
-    }, 500);
-  }, [isAdmin, onBulkAssign]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
-
-  const handleTouchMove = useCallback(() => {
-    // Cancel long-press if user moves finger
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
 
   const exitSelectionMode = useCallback(() => {
     setSelectionMode(false);
@@ -508,10 +478,6 @@ export function LeadsTable({
             <Card 
               key={lead.id} 
               className={`overflow-hidden ${selectionMode && selectedLeads.has(lead.id) ? 'ring-2 ring-primary' : ''}`}
-              onTouchStart={() => handleTouchStart(lead.id)}
-              onTouchEnd={handleTouchEnd}
-              onTouchCancel={handleTouchEnd}
-              onTouchMove={handleTouchMove}
             >
               <CardContent className="p-0">
                 <div className="flex items-stretch">
@@ -553,6 +519,12 @@ export function LeadsTable({
                         <Badge className={`${statusColors[lead.status || "new"]} text-xs px-1.5 py-0`}>
                           {lead.status || "new"}
                         </Badge>
+                      </div>
+                      {/* Bike model and purchase timeline */}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        {lead.bike_model && <span>{lead.bike_model}</span>}
+                        {lead.bike_model && lead.purchase_timeline && <span>•</span>}
+                        {lead.purchase_timeline && <span>{lead.purchase_timeline}</span>}
                       </div>
                     </div>
                     
@@ -644,7 +616,19 @@ export function LeadsTable({
           {/* Filters and Bulk Actions */}
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
-              {/* Select All for mobile - only show in selection mode */}
+              {/* Select All button for mobile - show when NOT in selection mode */}
+              {isMobile && isAdmin && onBulkAssign && !selectionMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9"
+                  onClick={() => setSelectionMode(true)}
+                >
+                  <CheckSquare className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {/* Select All checkbox - show when IN selection mode */}
               {isMobile && isAdmin && onBulkAssign && selectionMode && (
                 <div className="flex items-center">
                   <Checkbox
