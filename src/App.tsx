@@ -13,6 +13,7 @@ import MyLeads from "./pages/MyLeads";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
+import TeamPerformance from "./pages/TeamPerformance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/performance"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <TeamPerformance />
                 </ProtectedRoute>
               }
             />
