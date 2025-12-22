@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 export default function Settings() {
   return (
     <DashboardLayout title="Settings">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Notifications</CardTitle>

@@ -45,7 +45,7 @@ export default function Profile() {
 
   return (
     <DashboardLayout title="Profile">
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-3 sm:space-y-6 max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>Your Profile</CardTitle>
