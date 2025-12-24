@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Lead } from "@/hooks/useLeads";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -51,17 +52,16 @@ interface LeadsTableProps {
 }
 
 const statusColors: Record<string, string> = {
-  new: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  contacted: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-  qualified: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+  cold: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+  warm: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  hot: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
   converted: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  lost: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
 };
 
-export function LeadsTable({ 
-  leads, 
-  onUpdate, 
-  onDelete, 
+export function LeadsTable({
+  leads,
+  onUpdate,
+  onDelete,
   onBulkAssign,
   salesmen = [],
   isLoading,
@@ -69,6 +69,7 @@ export function LeadsTable({
 }: LeadsTableProps) {
   const { role } = useAuth();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const isAdmin = role === "admin";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -378,8 +379,8 @@ export function LeadsTable({
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Status</p>
-          <Badge className={`${statusColors[lead.status || "new"]} mt-1`}>
-            {lead.status || "new"}
+          <Badge className={`${statusColors[lead.status || "cold"]} mt-1`}>
+            {lead.status || "cold"}
           </Badge>
         </div>
         <div>
@@ -494,9 +495,8 @@ export function LeadsTable({
                   {/* Status indicator bar */}
                   <div className={`w-1.5 ${
                     lead.status === 'converted' ? 'bg-green-500' :
-                    lead.status === 'contacted' ? 'bg-yellow-500' :
-                    lead.status === 'qualified' ? 'bg-purple-500' :
-                    lead.status === 'lost' ? 'bg-red-500' :
+                    lead.status === 'hot' ? 'bg-orange-500' :
+                    lead.status === 'warm' ? 'bg-yellow-500' :
                     'bg-blue-500'
                   }`} />
                   
@@ -507,7 +507,7 @@ export function LeadsTable({
                       if (selectionMode) {
                         handleSelectLead(lead.id, !selectedLeads.has(lead.id));
                       } else {
-                        setViewingLead(lead);
+                        navigate(`/dashboard/leads/${lead.id}`);
                       }
                     }}
                   >
@@ -516,8 +516,8 @@ export function LeadsTable({
                         <h3 className="font-semibold text-foreground truncate text-sm">
                           {lead.full_name || "Unknown"}
                         </h3>
-                        <Badge className={`${statusColors[lead.status || "new"]} text-xs px-1.5 py-0`}>
-                          {lead.status || "new"}
+                        <Badge className={`${statusColors[lead.status || "cold"]} text-xs px-1.5 py-0`}>
+                          {lead.status || "cold"}
                         </Badge>
                       </div>
                       {/* Bike model and purchase timeline */}
@@ -584,12 +584,19 @@ export function LeadsTable({
                     />
                   </TableCell>
                 )}
-                <TableCell className="font-medium">{lead.full_name || "-"}</TableCell>
+                <TableCell className="font-medium">
+                  <button
+                    onClick={() => navigate(`/dashboard/leads/${lead.id}`)}
+                    className="hover:underline text-left"
+                  >
+                    {lead.full_name || "-"}
+                  </button>
+                </TableCell>
                 <TableCell>{lead.phone_number || "-"}</TableCell>
                 <TableCell>{lead.bike_model || "-"}</TableCell>
                 <TableCell>
-                  <Badge className={statusColors[lead.status || "new"]}>
-                    {lead.status || "new"}
+                  <Badge className={statusColors[lead.status || "cold"]}>
+                    {lead.status || "cold"}
                   </Badge>
                 </TableCell>
                 <TableCell>{lead.purchase_timeline || "-"}</TableCell>
@@ -654,11 +661,10 @@ export function LeadsTable({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="contacted">Contacted</SelectItem>
-                  <SelectItem value="qualified">Qualified</SelectItem>
+                  <SelectItem value="cold">Cold</SelectItem>
+                  <SelectItem value="warm">Warm</SelectItem>
+                  <SelectItem value="hot">Hot</SelectItem>
                   <SelectItem value="converted">Converted</SelectItem>
-                  <SelectItem value="lost">Lost</SelectItem>
                 </SelectContent>
               </Select>
             </div>

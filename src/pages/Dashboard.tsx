@@ -23,18 +23,30 @@ export default function Dashboard() {
   const { leads } = useLeads();
   const isMobile = useIsMobile();
 
+  const today = new Date().toISOString().split('T')[0];
+
   const totalLeads = leads.length;
-  const newLeads = leads.filter((l) => l.status === "new").length;
+  const coldLeads = leads.filter((l) => l.status === "cold").length;
   const convertedLeads = leads.filter((l) => l.status === "converted").length;
   const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(1) : 0;
 
+  // Follow-up categorization
+  const overdueFollowups = leads.filter((l) =>
+    l.next_followup_date && l.next_followup_date < today && l.status !== "converted"
+  );
+  const todayFollowups = leads.filter((l) =>
+    l.next_followup_date === today && l.status !== "converted"
+  );
+  const upcomingFollowups = leads.filter((l) =>
+    l.next_followup_date && l.next_followup_date > today && l.status !== "converted"
+  );
+
   // Status distribution for pie chart
   const statusData = [
-    { name: "New", value: leads.filter((l) => l.status === "new").length, color: "#3b82f6" },
-    { name: "Contacted", value: leads.filter((l) => l.status === "contacted").length, color: "#eab308" },
-    { name: "Qualified", value: leads.filter((l) => l.status === "qualified").length, color: "#8b5cf6" },
+    { name: "Cold", value: leads.filter((l) => l.status === "cold").length, color: "#3b82f6" },
+    { name: "Warm", value: leads.filter((l) => l.status === "warm").length, color: "#eab308" },
+    { name: "Hot", value: leads.filter((l) => l.status === "hot").length, color: "#f97316" },
     { name: "Converted", value: leads.filter((l) => l.status === "converted").length, color: "#22c55e" },
-    { name: "Lost", value: leads.filter((l) => l.status === "lost").length, color: "#ef4444" },
   ].filter((d) => d.value > 0);
 
   // Bike model distribution for bar chart
@@ -57,10 +69,10 @@ export default function Dashboard() {
       description: role === "salesman" ? "Your assigned leads" : "All leads",
     },
     {
-      title: "New Leads",
-      value: newLeads,
+      title: "Follow-ups Due",
+      value: overdueFollowups.length + todayFollowups.length,
       icon: Users,
-      description: "Awaiting contact",
+      description: `${overdueFollowups.length} overdue, ${todayFollowups.length} today`,
     },
     {
       title: "Converted",
@@ -169,6 +181,88 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Follow-ups Section */}
+      {(overdueFollowups.length > 0 || todayFollowups.length > 0 || upcomingFollowups.length > 0) && (
+        <Card className="mt-4 sm:mt-6">
+          <CardHeader>
+            <CardTitle className="text-base sm:text-lg">Follow-ups</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Overdue */}
+            {overdueFollowups.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-red-600 mb-2">
+                  Overdue ({overdueFollowups.length})
+                </h3>
+                <div className="space-y-2">
+                  {overdueFollowups.slice(0, 3).map((lead) => (
+                    <div key={lead.id} className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{lead.full_name || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {lead.followup_note || "No note"}
+                        </p>
+                      </div>
+                      <div className="text-xs text-red-600 font-medium ml-2">
+                        {lead.next_followup_date && format(new Date(lead.next_followup_date), "MMM dd")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Today */}
+            {todayFollowups.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-orange-600 mb-2">
+                  Today ({todayFollowups.length})
+                </h3>
+                <div className="space-y-2">
+                  {todayFollowups.slice(0, 3).map((lead) => (
+                    <div key={lead.id} className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{lead.full_name || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {lead.followup_note || "No note"}
+                        </p>
+                      </div>
+                      <div className="text-xs text-orange-600 font-medium ml-2">
+                        Today
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Upcoming */}
+            {upcomingFollowups.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-blue-600 mb-2">
+                  Upcoming ({upcomingFollowups.length})
+                </h3>
+                <div className="space-y-2">
+                  {upcomingFollowups.slice(0, 3).map((lead) => (
+                    <div key={lead.id} className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{lead.full_name || "Unknown"}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {lead.followup_note || "No note"}
+                        </p>
+                      </div>
+                      <div className="text-xs text-blue-600 font-medium ml-2">
+                        {lead.next_followup_date && format(new Date(lead.next_followup_date), "MMM dd")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </DashboardLayout>
   );
 }

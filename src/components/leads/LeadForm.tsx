@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Lead } from "@/hooks/useLeads";
+import { Lead, LeadStatus } from "@/hooks/useLeads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,8 +44,10 @@ export function LeadForm({ lead, onSubmit }: LeadFormProps) {
     bike_model: lead?.bike_model || "",
     post_code: lead?.post_code || "",
     purchase_timeline: lead?.purchase_timeline || "",
-    status: lead?.status || "new",
+    status: lead?.status || ("cold" as LeadStatus),
     notes: lead?.notes || "",
+    next_followup_date: lead?.next_followup_date || "",
+    followup_note: lead?.followup_note || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -138,7 +140,7 @@ export function LeadForm({ lead, onSubmit }: LeadFormProps) {
           <Label htmlFor="status">Status</Label>
           <Select
             value={formData.status}
-            onValueChange={(value) =>
+            onValueChange={(value: LeadStatus) =>
               setFormData({ ...formData, status: value })
             }
           >
@@ -146,15 +148,43 @@ export function LeadForm({ lead, onSubmit }: LeadFormProps) {
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="contacted">Contacted</SelectItem>
-              <SelectItem value="qualified">Qualified</SelectItem>
+              <SelectItem value="cold">Cold</SelectItem>
+              <SelectItem value="warm">Warm</SelectItem>
+              <SelectItem value="hot">Hot</SelectItem>
               <SelectItem value="converted">Converted</SelectItem>
-              <SelectItem value="lost">Lost</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {formData.status !== "converted" && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="next_followup_date">Next Follow-up Date</Label>
+            <Input
+              id="next_followup_date"
+              type="date"
+              value={formData.next_followup_date}
+              onChange={(e) =>
+                setFormData({ ...formData, next_followup_date: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="followup_note">Follow-up Note</Label>
+            <Textarea
+              id="followup_note"
+              value={formData.followup_note}
+              onChange={(e) =>
+                setFormData({ ...formData, followup_note: e.target.value })
+              }
+              placeholder="What needs to be done on follow-up?"
+              rows={2}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="notes">Notes</Label>

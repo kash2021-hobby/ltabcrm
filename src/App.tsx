@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
+import LeadDetail from "./pages/LeadDetail";
 import MyLeads from "./pages/MyLeads";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
@@ -45,6 +46,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <Leads />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/leads/:id"
+              element={
+                <ProtectedRoute>
+                  <LeadDetail />
                 </ProtectedRoute>
               }
             />
