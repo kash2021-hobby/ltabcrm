@@ -560,6 +560,7 @@ export function LeadsTable({
             <TableHead>Name</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Bike Model</TableHead>
+            <TableHead>Post Code</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Timeline</TableHead>
             <TableHead>Created</TableHead>
@@ -569,7 +570,7 @@ export function LeadsTable({
         <TableBody>
           {filteredLeads.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={isAdmin && onBulkAssign ? 8 : 7} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={isAdmin && onBulkAssign ? 9 : 8} className="text-center py-8 text-muted-foreground">
                 No leads found
               </TableCell>
             </TableRow>
@@ -594,6 +595,7 @@ export function LeadsTable({
                 </TableCell>
                 <TableCell>{lead.phone_number || "-"}</TableCell>
                 <TableCell>{lead.bike_model || "-"}</TableCell>
+                <TableCell>{lead.post_code || "-"}</TableCell>
                 <TableCell>
                   <Badge className={statusColors[lead.status || "cold"]}>
                     {lead.status || "cold"}
