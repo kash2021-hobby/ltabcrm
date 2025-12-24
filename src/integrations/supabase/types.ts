@@ -46,9 +46,11 @@ export type Database = {
           assigned_to: string | null
           bike_model: string | null
           created_at: string | null
+          followup_note: string | null
           full_name: string | null
           id: number
           lead_time: string | null
+          next_followup_date: string | null
           notes: string | null
           phone_number: string | null
           post_code: string | null
@@ -60,9 +62,11 @@ export type Database = {
           assigned_to?: string | null
           bike_model?: string | null
           created_at?: string | null
+          followup_note?: string | null
           full_name?: string | null
           id?: never
           lead_time?: string | null
+          next_followup_date?: string | null
           notes?: string | null
           phone_number?: string | null
           post_code?: string | null
@@ -74,9 +78,11 @@ export type Database = {
           assigned_to?: string | null
           bike_model?: string | null
           created_at?: string | null
+          followup_note?: string | null
           full_name?: string | null
           id?: never
           lead_time?: string | null
+          next_followup_date?: string | null
           notes?: string | null
           phone_number?: string | null
           post_code?: string | null
